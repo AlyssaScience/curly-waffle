@@ -100,6 +100,33 @@ h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
 }
 .filter-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
 .filter-btn:hover { border-color: var(--purple); }
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.view-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.view-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+.view-btn:hover { border-color: var(--teal); }
+.course-tag {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+.course-tag.tag-416 { background: var(--purple-light); color: var(--purple); }
+.course-tag.tag-519 { background: var(--teal-light); color: var(--teal); }
 .course-section { margin-bottom: 1.5rem; }
 .course-section h2 {
   font-size: 1.1rem;
@@ -207,6 +234,10 @@ h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
   <div class="week-display" id="week-display"></div>
 </div>
 <div class="chart-container"><canvas id="burndown-chart" height="220"></canvas></div>
+<div class="view-toggle">
+  <button class="view-btn active" data-view="byweek">By week</button>
+  <button class="view-btn" data-view="bycourse">By course</button>
+</div>
 <div class="filters">
   <button class="filter-btn active" data-filter="all">All</button>
   <button class="filter-btn" data-filter="thisweek">This week</button>
@@ -300,9 +331,75 @@ function isVideo(type) {
 }
 
 let currentFilter = 'all';
+let currentView = 'byweek';
 
-function renderContent() {
-  const container = document.getElementById('course-content');
+function shouldShowWeek(week) {
+  if (currentFilter === 'thisweek') return week === state.currentWeek;
+  if (week <= state.currentWeek) return true;
+  // Show upcoming crunch weeks if within 2 weeks ahead
+  if (CRUNCH_WEEKS.includes(week) && week <= state.currentWeek + 2) return true;
+  return false;
+}
+
+function filterItems(items) {
+  return items.filter(item => {
+    if (currentFilter === 'video') return isVideo(item.type);
+    if (currentFilter === 'graded') return isGraded(item.type);
+    return true;
+  });
+}
+
+function renderItemRow(item, course, week, origIdx) {
+  const id = `${course}-${week}-${origIdx}`;
+  const checked = state.checked[id] ? 'checked' : '';
+  const completedCls = state.checked[id] ? 'completed' : '';
+  const courseTag = currentView === 'byweek' ? `<span class="course-tag tag-${course === 'cs416' ? '416' : '519'}">${course === 'cs416' ? '416' : '519'}</span>` : '';
+  return `<div class="item-row ${completedCls}">${getIcon(item.type)}<div class="item-name"><a href="${item.url}" target="_blank" rel="noopener">${item.name}</a>${courseTag}</div>${item.duration ? `<span class="item-duration">${item.duration}</span>` : ''}<input type="checkbox" class="item-check" data-id="${id}" ${checked} onchange="toggleItem(this)"></div>`;
+}
+
+function renderByWeek() {
+  let html = '';
+  for (let week = 0; week <= 12; week++) {
+    if (!shouldShowWeek(week)) continue;
+    const items416 = COURSE_DATA.cs416[week] || [];
+    const items519 = COURSE_DATA.cs519[week] || [];
+    if (items416.length === 0 && items519.length === 0) continue;
+
+    // Combine items from both courses
+    const combined = [];
+    items416.forEach((item, idx) => combined.push({ ...item, course: 'cs416', origIdx: idx }));
+    items519.forEach((item, idx) => combined.push({ ...item, course: 'cs519', origIdx: idx }));
+
+    const filtered = combined.filter(item => {
+      if (currentFilter === 'video') return isVideo(item.type);
+      if (currentFilter === 'graded') return isGraded(item.type);
+      return true;
+    });
+
+    // Count total done/total for this week across both courses
+    const done = combined.filter(i => state.checked[`${i.course}-${week}-${i.origIdx}`]).length;
+    const total = combined.length;
+    const isCrunch = CRUNCH_WEEKS.includes(week);
+    const isUpcoming = week > state.currentWeek;
+    const autoOpen = currentFilter === 'thisweek';
+
+    // Build week title from both courses
+    const label416 = WEEK_LABELS_416[week] || '';
+    const label519 = WEEK_LABELS_519[week] || '';
+    const weekTitle = label416.replace(/^Week \d+:\s*/, '') === label519.replace(/^Week \d+:\s*/, '')
+      ? `Week ${week}: ${label416.replace(/^Week \d+:\s*/, '')}`
+      : `Week ${week}: ${label416.replace(/^Week \d+:\s*/, '')} / ${label519.replace(/^Week \d+:\s*/, '')}`;
+
+    html += `<div class="week-accordion"><div class="week-header${autoOpen ? ' open' : ''}" onclick="toggleWeek(this)"><span class="chevron">&#9654;</span><span class="week-title">${weekTitle}</span>${isCrunch ? '<span class="crunch-badge">CRUNCH</span>' : ''}${isUpcoming ? '<span class="crunch-badge" style="background:var(--teal-light);color:var(--teal)">HEADS UP</span>' : ''}<span class="week-progress">${done}/${total}</span></div><div class="week-body${autoOpen ? ' open' : ''}">`;
+    filtered.forEach(item => {
+      html += renderItemRow(item, item.course, week, item.origIdx);
+    });
+    html += '</div></div>';
+  }
+  return html;
+}
+
+function renderByCourse() {
   let html = '';
   ['cs416','cs519'].forEach(course => {
     const labels = course === 'cs416' ? WEEK_LABELS_416 : WEEK_LABELS_519;
@@ -311,36 +408,35 @@ function renderContent() {
     html += `<div class="course-section ${cls}"><h2>${title}</h2>`;
     const weeks = Object.keys(COURSE_DATA[course]).map(Number).sort((a,b)=>a-b);
     weeks.forEach(week => {
+      if (!shouldShowWeek(week)) return;
       const items = COURSE_DATA[course][week];
-      if (currentFilter === 'thisweek' && week !== state.currentWeek) return;
       if (items.length === 0 && week === 5 && course === 'cs416') {
-        if (currentFilter !== 'thisweek') html += `<div class="week-accordion"><div class="week-header"><span class="chevron">&#9654;</span><span class="week-title">${labels[week]}</span><span class="week-progress" style="font-style:italic">No items (dashboard continues)</span></div></div>`;
+        html += `<div class="week-accordion"><div class="week-header"><span class="chevron">&#9654;</span><span class="week-title">${labels[week]}</span><span class="week-progress" style="font-style:italic">No items (dashboard continues)</span></div></div>`;
         return;
       }
       if (items.length === 0) return;
-      const filtered = items.filter((item, idx) => {
-        if (currentFilter === 'video') return isVideo(item.type);
-        if (currentFilter === 'graded') return isGraded(item.type);
-        return true;
-      });
+      const filtered = filterItems(items);
       const weekItems = items.map((item, idx) => ({ ...item, id: `${course}-${week}-${idx}` }));
       const done = weekItems.filter(i => state.checked[i.id]).length;
       const total = weekItems.length;
       const isCrunch = CRUNCH_WEEKS.includes(week);
+      const isUpcoming = week > state.currentWeek;
       const autoOpen = currentFilter === 'thisweek';
-      html += `<div class="week-accordion"><div class="week-header${autoOpen ? ' open' : ''}" onclick="toggleWeek(this)"><span class="chevron">&#9654;</span><span class="week-title">${labels[week]}</span>${isCrunch ? '<span class="crunch-badge">CRUNCH</span>' : ''}<span class="week-progress">${done}/${total}</span></div><div class="week-body${autoOpen ? ' open' : ''}">`;
+      html += `<div class="week-accordion"><div class="week-header${autoOpen ? ' open' : ''}" onclick="toggleWeek(this)"><span class="chevron">&#9654;</span><span class="week-title">${labels[week]}</span>${isCrunch ? '<span class="crunch-badge">CRUNCH</span>' : ''}${isUpcoming ? '<span class="crunch-badge" style="background:var(--teal-light);color:var(--teal)">HEADS UP</span>' : ''}<span class="week-progress">${done}/${total}</span></div><div class="week-body${autoOpen ? ' open' : ''}">`;
       filtered.forEach((item, idx) => {
         const origIdx = items.indexOf(item);
-        const id = `${course}-${week}-${origIdx}`;
-        const checked = state.checked[id] ? 'checked' : '';
-        const completedCls = state.checked[id] ? 'completed' : '';
-        html += `<div class="item-row ${completedCls}">${getIcon(item.type)}<div class="item-name"><a href="${item.url}" target="_blank" rel="noopener">${item.name}</a></div>${item.duration ? `<span class="item-duration">${item.duration}</span>` : ''}<input type="checkbox" class="item-check" data-id="${id}" ${checked} onchange="toggleItem(this)"></div>`;
+        html += renderItemRow(item, course, week, origIdx);
       });
       html += '</div></div>';
     });
     html += '</div>';
   });
-  container.innerHTML = html;
+  return html;
+}
+
+function renderContent() {
+  const container = document.getElementById('course-content');
+  container.innerHTML = currentView === 'byweek' ? renderByWeek() : renderByCourse();
 }
 
 function toggleWeek(el) {
@@ -395,9 +491,19 @@ slider.addEventListener('input', () => {
   state.currentWeek = parseInt(slider.value);
   document.getElementById('week-label').textContent = state.currentWeek;
   saveState();
-  if (currentFilter === 'thisweek') renderContent();
+  renderContent();
   updateStats();
   updateChart();
+});
+
+// View toggle
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    renderContent();
+  });
 });
 
 // Filters
