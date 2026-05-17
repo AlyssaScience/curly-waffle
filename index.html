@@ -1,652 +1,538 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Summer 2026 Coursework Burn-down</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #fafaf8;
-      --card: #ffffff;
-      --surface: #f3f2ee;
-      --border: rgba(0,0,0,0.1);
-      --text: #1a1a1a;
-      --text-secondary: #6b6b68;
-      --text-tertiary: #9b9b97;
-      --purple: #534AB7;
-      --purple-light: #EEEDFE;
-      --purple-text: #3C3489;
-      --teal: #1D9E75;
-      --teal-light: #E1F5EE;
-      --teal-text: #085041;
-      --coral: #D85A30;
-      --coral-light: #FAECE7;
-      --coral-text: #993C1D;
-      --green: #1D9E75;
-      --radius: 10px;
-      --radius-sm: 6px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1a1a1a;
-        --card: #242424;
-        --surface: #2a2a2a;
-        --border: rgba(255,255,255,0.1);
-        --text: #e8e8e4;
-        --text-secondary: #a0a09c;
-        --text-tertiary: #6b6b68;
-        --purple-light: #2a2654;
-        --purple-text: #CECBF6;
-        --teal-light: #0a3028;
-        --teal-text: #9FE1CB;
-        --coral-light: #3a2018;
-        --coral-text: #F5C4B3;
-      }
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      padding: 2rem 1rem;
-    }
-
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      font-size: 22px;
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 1.5rem;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 10px;
-      margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 2px;
-    }
-
-    .stat-value {
-      font-size: 22px;
-      font-weight: 500;
-    }
-
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 1.5rem;
-      font-size: 14px;
-      color: var(--text-secondary);
-    }
-
-    .controls input[type="range"] {
-      flex: 1;
-      accent-color: var(--purple);
-    }
-
-    .controls .week-val {
-      font-weight: 500;
-      color: var(--text);
-      min-width: 20px;
-      text-align: center;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      font-size: 12px;
-      color: var(--text-secondary);
-      margin-bottom: 10px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .legend-swatch {
-      width: 10px;
-      height: 3px;
-      border-radius: 1px;
-    }
-
-    .chart-wrap {
-      position: relative;
-      width: 100%;
-      height: 260px;
-      margin-bottom: 2rem;
-    }
-
-    .reset-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: var(--text-secondary);
-      background: var(--surface);
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 6px 14px;
-      cursor: pointer;
-      margin-bottom: 1.5rem;
-      transition: background 0.15s;
-    }
-
-    .reset-btn:hover { background: var(--border); }
-
-    .week-section {
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius);
-      margin-bottom: 8px;
-      overflow: hidden;
-      background: var(--card);
-    }
-
-    .week-header {
-      padding: 10px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      user-select: none;
-      transition: background 0.1s;
-    }
-
-    .week-header:hover { background: var(--surface); }
-
-    .week-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .week-title {
-      font-weight: 500;
-      font-size: 14px;
-    }
-
-    .week-count {
-      font-size: 12px;
-      color: var(--text-tertiary);
-    }
-
-    .week-header-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 130px;
-    }
-
-    .progress-track {
-      flex: 1;
-      height: 4px;
-      background: var(--surface);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: 2px;
-      transition: width 0.3s ease;
-    }
-
-    .chevron {
-      font-size: 14px;
-      color: var(--text-tertiary);
-      transition: transform 0.2s;
-      line-height: 1;
-    }
-
-    .chevron.open { transform: rotate(180deg); }
-
-    .week-body {
-      display: none;
-      padding: 0 16px 12px;
-    }
-
-    .week-body.open { display: block; }
-
-    .badge {
-      font-size: 11px;
-      padding: 1px 7px;
-      border-radius: var(--radius-sm);
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .badge-416 { background: var(--purple-light); color: var(--purple-text); }
-    .badge-519 { background: var(--teal-light); color: var(--teal-text); }
-    .badge-crunch { background: var(--coral-light); color: var(--coral-text); }
-
-    .item-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 5px 0;
-      font-size: 13px;
-      color: var(--text-secondary);
-      transition: opacity 0.2s;
-    }
-
-    .item-row.done {
-      text-decoration: line-through;
-      opacity: 0.45;
-    }
-
-    .item-row input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      accent-color: var(--purple);
-      flex-shrink: 0;
-    }
-
-    .item-name { flex: 1; }
-
-    .item-hours {
-      font-size: 12px;
-      color: var(--text-tertiary);
-      white-space: nowrap;
-    }
-
-    .footer {
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 0.5px solid var(--border);
-      font-size: 12px;
-      color: var(--text-tertiary);
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <h1>Summer 2026 burn-down</h1>
-  <p class="subtitle">CS 416: Data Visualization + CS 519: Scientific Visualization</p>
-
-  <div class="stats">
-    <div class="stat-card">
-      <div class="stat-label">Completed</div>
-      <div class="stat-value" id="stat-done">0 / 43</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">CS 416</div>
-      <div class="stat-value" id="stat-416">0 / 24</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">CS 519</div>
-      <div class="stat-value" id="stat-519">0 / 19</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Current week</div>
-      <div class="stat-value" id="stat-week">1</div>
-    </div>
-  </div>
-
-  <div class="controls">
-    <span>I'm on week</span>
-    <input type="range" min="1" max="12" value="1" step="1" id="week-slider" />
-    <span class="week-val" id="week-out">1</span>
-  </div>
-
-  <div class="legend">
-    <span class="legend-item"><span class="legend-swatch" style="background:#888;"></span> Ideal pace</span>
-    <span class="legend-item"><span class="legend-swatch" style="background:var(--purple); height:3px;"></span> Your progress</span>
-    <span class="legend-item"><span class="legend-swatch" style="background:var(--teal); height:2px;"></span> Planned pace</span>
-  </div>
-
-  <div class="chart-wrap">
-    <canvas id="burnChart"></canvas>
-  </div>
-
-  <button class="reset-btn" id="reset-btn">Reset all progress</button>
-
-  <div id="week-list"></div>
-
-  <div class="footer">
-    Progress saves automatically in your browser.
-  </div>
-</div>
-
-<script>
-const STORAGE_KEY = 'summer2026-burndown';
-
-const weekData = [
-  { n:1, crunch:false, items:[
-    {cls:'416', name:'Elephant Chart', hours:'3h'},
-    {cls:'416', name:'Week 1 Quiz', hours:''},
-    {cls:'519', name:'Quiz 1: Sci Viz & Color Spaces', hours:'1h'}
-  ]},
-  { n:2, crunch:false, items:[
-    {cls:'416', name:"Fitts' Law Data", hours:'1h'},
-    {cls:'416', name:'Scale the Graph', hours:'1h'},
-    {cls:'416', name:'Week 2 Quiz', hours:'30m'},
-    {cls:'519', name:'Quiz 2: Scalar Field Viz', hours:'1h'}
-  ]},
-  { n:3, crunch:false, items:[
-    {cls:'416', name:'Graph Layout', hours:'3h'},
-    {cls:'416', name:'Week 3 Quiz', hours:'30m'},
-    {cls:'519', name:'Quiz 3: Data Science', hours:'1h'}
-  ]},
-  { n:4, crunch:false, items:[
-    {cls:'416', name:'Week 4 Quiz', hours:'10m'},
-    {cls:'416', name:'Dashboard (start)', hours:'3h'},
-    {cls:'519', name:'Quiz 4: Terrain Viz', hours:'1h'}
-  ]},
-  { n:5, crunch:true, items:[
-    {cls:'416', name:'Dashboard (finish)', hours:'12h'},
-    {cls:'519', name:'Quiz 5: Contouring', hours:'1h'},
-    {cls:'519', name:'Marching Squares', hours:'3h'}
-  ]},
-  { n:6, crunch:true, items:[
-    {cls:'416', name:'Midterm Exam', hours:'1h'},
-    {cls:'519', name:'Quiz 6: Volume Viz', hours:'1h'},
-    {cls:'519', name:'RBF Interpolation', hours:'1h'},
-    {cls:'519', name:'Midterm Exam', hours:'1h'}
-  ]},
-  { n:7, crunch:false, items:[
-    {cls:'416', name:'D3: Selecting Elements', hours:'15m'},
-    {cls:'416', name:'D3: Updating with Data', hours:'15m'},
-    {cls:'416', name:'D3: Selecting a Needle', hours:'15m'},
-    {cls:'416', name:'D3: SelectAll-Data-Enter-Append', hours:''},
-    {cls:'416', name:'Week 7 Quiz', hours:'1h'},
-    {cls:'519', name:'Quiz 7: Segmentation', hours:'1h'},
-    {cls:'519', name:'Volume Visualization', hours:'1h'}
-  ]},
-  { n:8, crunch:false, items:[
-    {cls:'416', name:'D3: Scales', hours:''},
-    {cls:'416', name:'D3: Axes', hours:'30m'},
-    {cls:'416', name:'D3: Pie Chart', hours:'15m'},
-    {cls:'416', name:'Fuel Efficiency Scatterplot', hours:''},
-    {cls:'416', name:'Week 8 Quiz', hours:''},
-    {cls:'519', name:'Quiz 8: Vector Fields', hours:'1h'}
-  ]},
-  { n:9, crunch:false, items:[
-    {cls:'416', name:'Week 9 Quiz', hours:'15m'},
-    {cls:'519', name:'Quiz 9: Advanced Flow', hours:'1h'},
-    {cls:'519', name:'LIC Visualization', hours:'1h'}
-  ]},
-  { n:10, crunch:false, items:[
-    {cls:'416', name:'Week 10 Quiz', hours:''},
-    {cls:'416', name:'Narrative Viz (start)', hours:'3h'},
-    {cls:'519', name:'Quiz 10: Tensor Fields', hours:'1h'}
-  ]},
-  { n:11, crunch:true, items:[
-    {cls:'416', name:'Narrative Viz (finish)', hours:'12h'},
-    {cls:'519', name:'Quiz 11: Bioinformatics', hours:'1h'},
-    {cls:'519', name:'Force-Directed Graph Layout', hours:'1h'}
-  ]},
-  { n:12, crunch:true, items:[
-    {cls:'416', name:'Final Exam', hours:'1h'},
-    {cls:'519', name:'Quiz 12: Viz at Scale', hours:'1h'},
-    {cls:'519', name:'Final Exam', hours:'1h'}
-  ]}
-];
-
-const TOTAL = weekData.reduce((s, w) => s + w.items.length, 0);
-const TOTAL_416 = weekData.reduce((s, w) => s + w.items.filter(i => i.cls === '416').length, 0);
-const TOTAL_519 = weekData.reduce((s, w) => s + w.items.filter(i => i.cls === '519').length, 0);
-
-let state, currentWeek;
-
-function loadState() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (saved && saved.checks && saved.checks.length === weekData.length) {
-      state = saved.checks;
-      currentWeek = saved.currentWeek || 1;
-    } else {
-      resetState();
-    }
-  } catch {
-    resetState();
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coursework Burn-Down Tracker</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect x='4' y='18' width='6' height='10' rx='1' fill='%23534AB7'/><rect x='13' y='12' width='6' height='16' rx='1' fill='%231D9E75'/><rect x='22' y='6' width='6' height='22' rx='1' fill='%23D85A30'/></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f8f9fa;
+  --card-bg: #ffffff;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border: #e5e7eb;
+  --purple: #534AB7;
+  --teal: #1D9E75;
+  --coral: #D85A30;
+  --purple-light: #ede9fe;
+  --teal-light: #d1fae5;
+  --coral-light: #fee2d5;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1119;
+    --card-bg: #1a1d2e;
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --border: #2d3348;
+    --purple-light: #2d2757;
+    --teal-light: #123329;
+    --coral-light: #3d2218;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
 }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 1rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow);
+}
+.stat-card .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); }
+.stat-card .value { font-size: 1.4rem; font-weight: 700; }
+.stat-card.purple .value { color: var(--purple); }
+.stat-card.teal .value { color: var(--teal); }
+.controls {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.controls label { font-size: 0.85rem; font-weight: 600; }
+.controls input[type=range] { width: 100%; margin-top: 0.5rem; accent-color: var(--purple); }
+.week-display { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
+.chart-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn.active { background: var(--purple); color: #fff; border-color: var(--purple); }
+.filter-btn:hover { border-color: var(--purple); }
+.course-section { margin-bottom: 1.5rem; }
+.course-section h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--purple);
+}
+.course-section.cs519 h2 { border-left-color: var(--teal); }
+.week-accordion {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.week-header {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  gap: 0.5rem;
+  transition: background 0.15s;
+}
+.week-header:hover { background: var(--border); }
+.week-header .chevron {
+  transition: transform 0.2s;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.week-header.open .chevron { transform: rotate(90deg); }
+.week-header .week-title { font-weight: 600; font-size: 0.85rem; flex: 1; }
+.week-header .week-progress { font-size: 0.75rem; color: var(--text-secondary); }
+.week-header .crunch-badge {
+  font-size: 0.65rem;
+  background: var(--coral-light);
+  color: var(--coral);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.week-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.week-body.open { max-height: 2000px; }
+.item-row {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem 0.5rem 2rem;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.item-row.completed { opacity: 0.6; }
+.item-icon { width: 1.2rem; text-align: center; flex-shrink: 0; }
+.item-icon.video { color: var(--purple); }
+.item-icon.reading { color: var(--teal); }
+.item-icon.graded { color: var(--coral); }
+.item-icon.programming { color: #e67e22; }
+.item-icon.plugin { color: var(--text-secondary); }
+.item-name { flex: 1; min-width: 0; }
+.item-name a {
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+.item-name a:hover { color: var(--purple); text-decoration: underline; }
+.item-duration {
+  font-size: 0.7rem;
+  background: var(--bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.item-check { width: 1.1rem; height: 1.1rem; accent-color: var(--purple); cursor: pointer; flex-shrink: 0; }
+.cs519 .item-check { accent-color: var(--teal); }
+@media (max-width: 600px) {
+  body { padding: 0.5rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .item-row { padding-left: 1.2rem; }
+  h1 { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<h1>Summer 2026 Coursework Burn-Down</h1>
+<div class="stats-grid">
+  <div class="stat-card"><div class="label">Overall</div><div class="value" id="stat-overall">0/0</div></div>
+  <div class="stat-card purple"><div class="label">CS 416</div><div class="value" id="stat-416">0%</div></div>
+  <div class="stat-card teal"><div class="label">CS 519</div><div class="value" id="stat-519">0%</div></div>
+  <div class="stat-card"><div class="label">Current Week</div><div class="value" id="stat-week">1</div></div>
+</div>
+<div class="controls">
+  <label>Current Week: <span id="week-label">1</span></label>
+  <input type="range" id="week-slider" min="1" max="12" value="1">
+  <div class="week-display" id="week-display"></div>
+</div>
+<div class="chart-container"><canvas id="burndown-chart" height="220"></canvas></div>
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="thisweek">This week</button>
+  <button class="filter-btn" data-filter="video">Videos</button>
+  <button class="filter-btn" data-filter="graded">Graded</button>
+</div>
+<div id="course-content"></div>
 
-function resetState() {
-  state = weekData.map(w => w.items.map(() => false));
-  currentWeek = 1;
+<script>
+const COURSE_DATA = {"cs416":{"0":[{"type":"Video","name":"Welcome to Data Visualization (Weeks 1-4)","status":"Completed","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/JUaQ6/welcome-to-data-visualization-weeks-1-4"},{"type":"Reading","name":"Syllabus","status":"Completed","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/DQjww/syllabus"},{"type":"Reading","name":"Data Visualization Resources","status":"Completed","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/ijZAO/data-visualization-resources"},{"type":"Reading","name":"Course Communication & Resources","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/GFVfg/course-communication-resources"},{"type":"Reading","name":"ProctorU Exams","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/F4yRR/proctoru-exams"},{"type":"Reading","name":"How to Schedule and Take the ProctorU Exams","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/8Jzxm/how-to-schedule-and-take-the-proctoru-exams"},{"type":"Graded Assignment","name":"Orientation Quiz","status":"Completed","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/9BqFS/orientation-quiz"}],"1":[{"type":"Video","name":"1-1-01 Accessing the World Development Indicators","status":"Not submitted","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/raDJR/1-1-01-accessing-the-world-development-indicators"},{"type":"Video","name":"1-1-02 Data Preprocessing","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/V0dQc/1-1-02-data-preprocessing"},{"type":"Video","name":"1-1-03 Pivoting","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/5QFhB/1-1-03-pivoting"},{"type":"Video","name":"1-2-01 Joining Tables","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/bqs9G/1-2-01-joining-tables"},{"type":"Video","name":"1-2-02 Aggregations","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/t5saA/1-2-02-aggregations"},{"type":"Video","name":"1-2-03 The Elephant Chart","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/jTvAY/1-2-03-the-elephant-chart"},{"type":"Programming Assignment","name":"Create an Elephant Chart","status":"Not submitted","duration":"3h","url":"https://www.coursera.org/learn/cs-416-dv/programming/qPAMI/create-an-elephant-chart"},{"type":"Video","name":"1-3-01 Polaris and VizQL","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/WPsAL/1-3-01-polaris-and-vizql"},{"type":"Reading","name":"Polaris and VizQL References","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/VVFfE/polaris-and-vizql-references"},{"type":"Video","name":"1-3-02 Table Algebra","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/xiNk2/1-3-02-table-algebra"},{"type":"Video","name":"1-3-03 Visual Query","status":"Not submitted","duration":"13 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/vZjje/1-3-03-visual-query"},{"type":"Graded Assignment","name":"Week 1 Quiz","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/Jjiad/week-1-quiz"}],"2":[{"type":"Video","name":"2-1-01 The Human","status":"Not submitted","duration":"11 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/MVs0H/2-1-01-the-human"},{"type":"Video","name":"2-1-02 Memory","status":"Not submitted","duration":"12 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/FVBjj/2-1-02-memory"},{"type":"Video","name":"2-1-03 Reasoning","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/lz4Ht/2-1-03-reasoning"},{"type":"Video","name":"2-1-04 The Human Retina","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/eKWWU/2-1-04-the-human-retina"},{"type":"Video","name":"2-1-05 Perceiving Two Dimensions","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/BuZbn/2-1-05-perceiving-two-dimensions"},{"type":"Video","name":"2-1-06 Perceiving Perspective","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/Erhua/2-1-06-perceiving-perspective"},{"type":"Graded Assignment","name":"Fitts' Law Data","status":"Not submitted","duration":"1h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/4OCJX/fitts-law-data"},{"type":"Video","name":"2-2-01 2-D Graphics","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/UB7gQ/2-2-01-2-d-graphics"},{"type":"Video","name":"2-2-02 2-D Drawing","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/KasMZ/2-2-02-2-d-drawing"},{"type":"Video","name":"2-2-03 3-D Graphics","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/swKJi/2-2-03-3-d-graphics"},{"type":"Video","name":"2-2-04 Photorealism","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/4MxOZ/2-2-04-photorealism"},{"type":"Video","name":"2-2-05 Non-Photorealism","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/i4d47/2-2-05-non-photorealism"},{"type":"Graded Assignment","name":"Scale the Graph","status":"Not submitted","duration":"1h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/5pGQx/scale-the-graph"},{"type":"Graded Assignment","name":"Week 2 Quiz","status":"Not submitted","duration":"30 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/2JU8u/week-2-quiz"}],"3":[{"type":"Video","name":"3-1-01 Data","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/ONoPE/3-1-01-data"},{"type":"Video","name":"3-1-02 Mapping","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/0BZWO/3-1-02-mapping"},{"type":"Reading","name":"3-1-02A Optional Further Reading","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/YsZmL/3-1-02a-optional-further-reading"},{"type":"Video","name":"3-1-03 Charts","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/2PIMW/3-1-03-charts"},{"type":"Video","name":"3-1-04 Packing","status":"Not submitted","duration":"12 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/wZ6DH/3-1-04-packing"},{"type":"Reading","name":"3-2-00 Interactive Dynamics","status":"Not submitted","duration":"30 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/me2PE/3-2-00-interactive-dynamics"},{"type":"Video","name":"3-2-01 Interactive Dynamics","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/EYcqd/3-2-01-interactive-dynamics"},{"type":"Video","name":"3-2-02 Sorting","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/JdcF7/3-2-02-sorting"},{"type":"Video","name":"3-2-03 Stacked Graphs: Part 1","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/TP9DE/3-2-03-stacked-graphs-part-1"},{"type":"Video","name":"3-2-04 Stacked Graphs: Part 2","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/fllnn/3-2-04-stacked-graphs-part-2"},{"type":"Video","name":"3-3-01 Parallel Coordinates","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/2v40S/3-3-01-parallel-coordinates"},{"type":"Reading","name":"3-3-01-A Parallel Coordinates in Tableau","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/Ht31J/3-3-01-a-parallel-coordinates-in-tableau"},{"type":"Video","name":"3-3-02 Principal Component Analysis","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/lvgIt/3-3-02-principal-component-analysis"},{"type":"Video","name":"3-3-03 Multidimensional Scaling","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/6ZQop/3-3-03-multidimensional-scaling"},{"type":"Video","name":"3-4-01 Graphs and Networks","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/6GX5G/3-4-01-graphs-and-networks"},{"type":"Video","name":"3-4-02 Embedding Planar Graphs","status":"Not submitted","duration":"11 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/OZYbt/3-4-02-embedding-planar-graphs"},{"type":"Video","name":"3-4-03 Graph Visualization","status":"Not submitted","duration":"13 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/7N1GE/3-4-03-graph-visualization"},{"type":"Video","name":"3-4-04 Tree Maps","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/9Pj4n/3-4-04-tree-maps"},{"type":"Programming Assignment","name":"Graph Layout","status":"Not submitted","duration":"3h","url":"https://www.coursera.org/learn/cs-416-dv/programming/3qqUm/graph-layout"},{"type":"Graded Assignment","name":"Week 3 Quiz","status":"Not submitted","duration":"30 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/lWBpX/week-3-quiz"}],"4":[{"type":"Video","name":"4-1-01 The Information Visualization Mantra","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/fvlk2/4-1-01-the-information-visualization-mantra"},{"type":"Video","name":"4-1-02 Overview First","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/gqCI6/4-1-02-overview-first"},{"type":"Video","name":"4-1-03 Zoom...","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/sjMDk/4-1-03-zoom"},{"type":"Video","name":"4-1-04 ...And Filter","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/A23KF/4-1-04-and-filter"},{"type":"Video","name":"4-1-05 Details On Demand","status":"Not submitted","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/TY8sJ/4-1-05-details-on-demand"},{"type":"Video","name":"4-2-01 Building a WDI Dashboard","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/sCxuB/4-2-01-building-a-wdi-dashboard"},{"type":"Video","name":"4-2-02 Dashboard Layout & Navigation","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/ssGuQ/4-2-02-dashboard-layout-navigation"},{"type":"Video","name":"4-2-03 Brushing and Cross-Filtering","status":"Not submitted","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/cC2Vm/4-2-03-brushing-and-cross-filtering"},{"type":"Video","name":"4-3-01 Documenting Your Visualization","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/BSfS2/4-3-01-documenting-your-visualization"},{"type":"Reading","name":"Reading: Dashboard Design Patterns","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/7E9GP/reading-dashboard-design-patterns"},{"type":"Graded Assignment","name":"Week 4 Quiz","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/CNjKY/week-4-quiz"},{"type":"Graded Assignment","name":"Create a Dashboard","status":"Not submitted","duration":"3h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/fy2NV/create-a-dashboard"},{"type":"Reading","name":"Finish the Dashboard Project","status":"Not submitted","duration":"12h","url":"https://www.coursera.org/learn/cs-416-dv/supplement/yZLlG/finish-the-dashboard-project"}],"5":[],"6":[{"type":"Reading","name":"Midterm Exam Overview","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/1PHT9/midterm-exam-overview"},{"type":"Reading","name":"Midterm Exam Policies and Technical Support","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/9qzmG/midterm-exam-policies-and-technical-support"},{"type":"Graded Assignment","name":"Midterm Exam Password Quiz","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/qmIDB/midterm-exam-password-quiz"},{"type":"Graded Assignment","name":"Midterm Exam","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/FQROJ/midterm-exam"}],"7":[{"type":"Video","name":"7-1-1 Introduction to Narrative Visualization","status":"Not submitted","duration":"47 sec","url":"https://www.coursera.org/learn/cs-416-dv/lecture/zqpuB/7-1-1-introduction-to-narrative-visualization"},{"type":"Video","name":"7-1-2 Modes of Data Visualization","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/dQYH4/7-1-2-modes-of-data-visualization"},{"type":"Video","name":"7-1-3 Examples from Data Journalism","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/cGq4c/7-1-3-examples-from-data-journalism"},{"type":"Video","name":"7-2-1 HTML & CSS","status":"Not submitted","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/bbT28/7-2-1-html-css"},{"type":"Ungraded Plugin","name":"7-2-2 Prof. Hart's JavaScript Tryer Outer","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/ungradedWidget/rGVGi/7-2-2-prof-harts-javascript-tryer-outer"},{"type":"Video","name":"7-2-3 JavaScript","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/2VET2/7-2-3-javascript"},{"type":"Ungraded Plugin","name":"7-2-4 Some Simple JavaScript","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/ungradedWidget/fDPUr/7-2-4-some-simple-javascript"},{"type":"Video","name":"7-2-5 DOM","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/uIZ8e/7-2-5-dom"},{"type":"Video","name":"7-2-6 SVG","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/mLXdG/7-2-6-svg"},{"type":"Ungraded Plugin","name":"7-2-7 DOM Tryer Outer","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/ungradedWidget/nbLZj/7-2-7-dom-tryer-outer"},{"type":"Video","name":"7-3-1 Introduction to D3: Part 1","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/UrC9P/7-3-1-introduction-to-d3-part-1"},{"type":"Video","name":"7-3-2 Introduction to D3: Part 2","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/UWTnk/7-3-2-introduction-to-d3-part-2"},{"type":"Graded Assignment","name":"7-3-3 Selecting Elements","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/1BCQV/7-3-3-selecting-elements"},{"type":"Video","name":"7-3-4 D3 Data Node Joins","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/MaG3e/7-3-4-d3-data-node-joins"},{"type":"Graded Assignment","name":"7-3-5 Updating Elements with Data","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/iSNjr/7-3-5-updating-elements-with-data"},{"type":"Video","name":"7-3-6 D3 Selection Methods","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/qEjcB/7-3-6-d3-selection-methods"},{"type":"Graded Assignment","name":"7-3-7 Selecting a Needle in a Haystack","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/Guf8f/7-3-7-selecting-a-needle-in-a-haystack"},{"type":"Video","name":"7-3-8 D3 Selection Patterns","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/zpz5r/7-3-8-d3-selection-patterns"},{"type":"Graded Assignment","name":"7-3-9 Using the SelectAll-Data-Enter-Append Pattern","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/N02Ki/7-3-9-using-the-selectall-data-enter-append-pattern"},{"type":"Graded Assignment","name":"Week 7 Quiz","status":"Not submitted","duration":"1h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/CGiXc/week-7-quiz"}],"8":[{"type":"Video","name":"8-1-1 Scales","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/vriTh/8-1-1-scales"},{"type":"Graded Assignment","name":"8-1-2 Scales","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/eOvld/8-1-2-scales"},{"type":"Video","name":"8-1-3 Axes","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/6tIYA/8-1-3-axes"},{"type":"Graded Assignment","name":"8-1-4 Axes","status":"Not submitted","duration":"30 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/AIK4t/8-1-4-axes"},{"type":"Video","name":"8-1-5 Pie Charts","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/EQd9A/8-1-5-pie-charts"},{"type":"Graded Assignment","name":"8-1-6 Pie Chart","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/kmQL6/8-1-6-pie-chart"},{"type":"Video","name":"8-2-1 Interactive Computing","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/Pa547/8-2-1-interactive-computing"},{"type":"Video","name":"8-2-2 Model View Controller","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/KPsHJ/8-2-2-model-view-controller"},{"type":"Video","name":"8-2-3 The Web Browser","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/xISE9/8-2-3-the-web-browser"},{"type":"Video","name":"8-2-4 Event Callbacks","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/5YOMP/8-2-4-event-callbacks"},{"type":"Video","name":"8-2-5 Javascript Execution","status":"Not submitted","duration":"14 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/MEI6O/8-2-5-javascript-execution"},{"type":"Graded Assignment","name":"8-2-6 Fuel Efficiency Scatterplot","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/icVCB/8-2-6-fuel-efficiency-scatterplot"},{"type":"Video","name":"8-3-1 Web Page Interaction Design","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/zSS44/8-3-1-web-page-interaction-design"},{"type":"Video","name":"8-3-2 D3 Events","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/oPjO6/8-3-2-d3-events"},{"type":"Video","name":"8-3-3 Tooltips","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/nTekp/8-3-3-tooltips"},{"type":"Video","name":"8-3-4 D3 Graphs","status":"Not submitted","duration":"12 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/xctP8/8-3-4-d3-graphs"},{"type":"Video","name":"8-3-5 D3 Transitions","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/FKczr/8-3-5-d3-transitions"},{"type":"Graded Assignment","name":"Week 8 Quiz","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/ZMIpx/week-8-quiz"}],"9":[{"type":"Reading","name":"Narrative Visualization: Telling Stories with Data","status":"Not submitted","duration":"30 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/mythR/narrative-visualization-telling-stories-with-data"},{"type":"Video","name":"9-1-1 Overview of Narrative Visualization","status":"Not submitted","duration":"51 sec","url":"https://www.coursera.org/learn/cs-416-dv/lecture/JZtxs/9-1-1-overview-of-narrative-visualization"},{"type":"Video","name":"9-1-2 Elements of the Visual Narrative","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/S0Pz0/9-1-2-elements-of-the-visual-narrative"},{"type":"Video","name":"9-1-3 Elements of Narrative Structure","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/CMG3Z/9-1-3-elements-of-narrative-structure"},{"type":"Video","name":"9-1-4 Narrative Layouts","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/8mbDR/9-1-4-narrative-layouts"},{"type":"Video","name":"9-2-1 The Narrative Spectrum","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/go1IU/9-2-1-the-narrative-spectrum"},{"type":"Video","name":"9-2-2 The Martini Glass","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/3anWA/9-2-2-the-martini-glass"},{"type":"Video","name":"9-2-3 The Interactive Slide Show","status":"Not submitted","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/Vqrwe/9-2-3-the-interactive-slide-show"},{"type":"Video","name":"9-2-4 The Drill Down Story","status":"Not submitted","duration":"2 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/lJYgV/9-2-4-the-drill-down-story"},{"type":"Video","name":"9-3-1 A Model for Narrative Visualization","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/nQn6u/9-3-1-a-model-for-narrative-visualization"},{"type":"Video","name":"9-3-2 Tableau Stories","status":"Not submitted","duration":"3 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/g6f5A/9-3-2-tableau-stories"},{"type":"Graded Assignment","name":"Week 9 Quiz","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/zdu4j/week-9-quiz"},{"type":"Graded Assignment","name":"Create a Narrative Visualization","status":"Not submitted","duration":"3h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/Y5Kdl/create-a-narrative-visualization"}],"10":[{"type":"Video","name":"10-1-1 Overview of Declarative Visualization","status":"Not submitted","duration":"1 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/1DOu9/10-1-1-overview-of-declarative-visualization"},{"type":"Video","name":"10-1-2 The Grammar of Graphics","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/Vu98r/10-1-2-the-grammar-of-graphics"},{"type":"Video","name":"10-1-3 Declarative Programming","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/l45nu/10-1-3-declarative-programming"},{"type":"Video","name":"10-2-1 Vega","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/dMXU7/10-2-1-vega"},{"type":"Video","name":"10-2-2 Vega Chart","status":"Not submitted","duration":"4 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/Py58L/10-2-2-vega-chart"},{"type":"Video","name":"10-2-3 Reactive Vega","status":"Not submitted","duration":"11 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/7VKBZ/10-2-3-reactive-vega"},{"type":"Video","name":"10-2-4 Vega-Lite","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/RshmX/10-2-4-vega-lite"},{"type":"Video","name":"10-2-5 The Language of Narrative Visualization","status":"Not submitted","duration":"5 min","url":"https://www.coursera.org/learn/cs-416-dv/lecture/2zQRL/10-2-5-the-language-of-narrative-visualization"},{"type":"Reading","name":"Authoring Narrative Visualizations with Ellipsis","status":"Not submitted","duration":"30 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/VXnG0/authoring-narrative-visualizations-with-ellipsis"},{"type":"Graded Assignment","name":"Week 10 Quiz","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/Z4yLk/week-10-quiz"}],"11":[{"type":"Reading","name":"Finish the Narrative Visualization","status":"Not submitted","duration":"12h","url":"https://www.coursera.org/learn/cs-416-dv/supplement/h6MU3/finish-the-narrative-visualization"}],"12":[{"type":"Reading","name":"Final Exam Overview","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/rfF3B/final-exam-overview"},{"type":"Reading","name":"Final Exam Policies and Technical Support","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-416-dv/supplement/tNA9Z/final-exam-policies-and-technical-support"},{"type":"Graded Assignment","name":"New Final Exam Password Quiz","status":"Not submitted","duration":"","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/msm4z/new-final-exam-password-quiz"},{"type":"Graded Assignment","name":"New Final Exam","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-416-dv/assignment-submission/cWhjK/new-final-exam"}]},"cs519":{"0":[{"type":"Reading","name":"Syllabus","status":"Completed","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/gsjDc/syllabus"},{"type":"Reading","name":"Scientific Visualization Resources","status":"Completed","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/DZyEg/scientific-visualization-resources"},{"type":"Reading","name":"Communication Resources","status":"Completed","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/JXmvW/communication-resources"},{"type":"Reading","name":"Important: Assignments and Exams on PrairieLearn","status":"Completed","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/790vj/important-assignments-and-exams-on-prairielearn"},{"type":"Video","name":"Segmenting Multiple Objects","status":"Locked","duration":"14 min","url":"https://www.coursera.org/learn/cs-519/lecture/Jnhhr/segmenting-multiple-objects"},{"type":"Ungraded Plugin","name":"How was the course?","status":"Not submitted","duration":"15 min","url":"https://www.coursera.org/learn/cs-519/ungradedWidget/gXbWA/how-was-the-course"}],"1":[{"type":"Video","name":"What is Scientific Visualization?","status":"Completed","duration":"13 min","url":"https://www.coursera.org/learn/cs-519/lecture/g5TK9/what-is-scientific-visualization"},{"type":"Video","name":"The Purposes of Visualization","status":"Completed","duration":"14 min","url":"https://www.coursera.org/learn/cs-519/lecture/jbpE2/the-purposes-of-visualization"},{"type":"Video","name":"Digital Images: Display-Derived Color Spaces","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-519/lecture/yNY2G/digital-images-display-derived-color-spaces"},{"type":"Video","name":"Digital Images: Representing Intensity","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-519/lecture/uR8g9/digital-images-representing-intensity"},{"type":"Video","name":"Digital Images: The HSV Color Space","status":"Not submitted","duration":"6 min","url":"https://www.coursera.org/learn/cs-519/lecture/asUAt/digital-images-the-hsv-color-space"},{"type":"Video","name":"Perceptual Color Spaces","status":"Not submitted","duration":"24 min","url":"https://www.coursera.org/learn/cs-519/lecture/sKECv/perceptual-color-spaces"},{"type":"Video","name":"The sRGB Color Space","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-519/lecture/Omhsq/the-srgb-color-space"},{"type":"Video","name":"Gamma Correction","status":"Not submitted","duration":"13 min","url":"https://www.coursera.org/learn/cs-519/lecture/lLxkt/gamma-correction"},{"type":"Graded App Item","name":"Quiz 1 PL: Scientific Visualization and Color Spaces","status":"Not submitted","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/crMxj/quiz-1-pl-scientific-visualization-and-color-spaces"}],"2":[{"type":"Video","name":"Rendering","status":"Not submitted","duration":"9 min","url":"https://www.coursera.org/learn/cs-519/lecture/VmaAA/rendering"},{"type":"Video","name":"Rasterization","status":"Not submitted","duration":"12 min","url":"https://www.coursera.org/learn/cs-519/lecture/LKwQD/rasterization"},{"type":"Video","name":"Shading","status":"Not submitted","duration":"27 min","url":"https://www.coursera.org/learn/cs-519/lecture/Ze2pR/shading"},{"type":"Video","name":"Rendering and Visualization","status":"Not submitted","duration":"23 min","url":"https://www.coursera.org/learn/cs-519/lecture/ZJZAJ/rendering-and-visualization"},{"type":"Video","name":"Colormaps","status":"Not submitted","duration":"24 min","url":"https://www.coursera.org/learn/cs-519/lecture/ZYQJs/colormaps"},{"type":"Graded App Item","name":"Quiz 2: Scalar Field Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/hgJt1/quiz-2-scalar-field-visualization"}],"3":[{"type":"Video","name":"A Data Taxonomy","status":"Not submitted","duration":"12 min","url":"https://www.coursera.org/learn/cs-519/lecture/NEEac/a-data-taxonomy"},{"type":"Video","name":"Linear Interpolation","status":"Not submitted","duration":"38 min","url":"https://www.coursera.org/learn/cs-519/lecture/zmBDV/linear-interpolation"},{"type":"Video","name":"Barycentric Coordinates and Interpolation","status":"Not submitted","duration":"20 min","url":"https://www.coursera.org/learn/cs-519/lecture/QjWDF/barycentric-coordinates-and-interpolation"},{"type":"Video","name":"Scattered Data Interpolation","status":"Not submitted","duration":"18 min","url":"https://www.coursera.org/learn/cs-519/lecture/t1d49/scattered-data-interpolation"},{"type":"Graded App Item","name":"Quiz 3: Data Science for People in a Hurry","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/sDLcq/quiz-3-data-science-for-people-in-a-hurry"}],"4":[{"type":"Video","name":"Meshes and Elements","status":"Not submitted","duration":"26 min","url":"https://www.coursera.org/learn/cs-519/lecture/83mXs/meshes-and-elements"},{"type":"Video","name":"Triangulated Surface Meshes","status":"Locked","duration":"17 min","url":"https://www.coursera.org/learn/cs-519/lecture/uweCX/triangulated-surface-meshes"},{"type":"Video","name":"Data Structures for Polygonal Meshes","status":"Locked","duration":"27 min","url":"https://www.coursera.org/learn/cs-519/lecture/rkAxT/data-structures-for-polygonal-meshes"},{"type":"Video","name":"Terrain Generation for Geographic Information Systems","status":"Not submitted","duration":"36 min","url":"https://www.coursera.org/learn/cs-519/lecture/EXE4v/terrain-generation-for-geographic-information-systems"},{"type":"Reading","name":"Generating Raster DEM from Mass Points Via TIN Streaming","status":"Locked","duration":"1h 30m","url":"https://www.coursera.org/learn/cs-519/supplement/nUJ0n/generating-raster-dem-from-mass-points-via-tin-streaming"},{"type":"Graded App Item","name":"Quiz 4: Domain Modeling and Terrain Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/H1nXS/quiz-4-domain-modeling-and-terrain-visualization"}],"5":[{"type":"Video","name":"Marching Squares","status":"Not submitted","duration":"22 min","url":"https://www.coursera.org/learn/cs-519/lecture/ZCRgh/marching-squares"},{"type":"Graded App Item","name":"Programming Assignment: Marching Squares","status":"Locked","duration":"3h","url":"https://www.coursera.org/learn/cs-519/gradedLti/qDDzb/programming-assignment-marching-squares"},{"type":"Video","name":"Marching Cubes: Algorithm","status":"Locked","duration":"22 min","url":"https://www.coursera.org/learn/cs-519/lecture/jlhy4/marching-cubes-algorithm"},{"type":"Video","name":"Marching Cubes: Consistency and Correctness","status":"Locked","duration":"13 min","url":"https://www.coursera.org/learn/cs-519/lecture/QN6RZ/marching-cubes-consistency-and-correctness"},{"type":"Video","name":"Marching Tetrahedra: Algorithm","status":"Locked","duration":"18 min","url":"https://www.coursera.org/learn/cs-519/lecture/OzRK7/marching-tetrahedra-algorithm"},{"type":"Video","name":"Dual Marching Squares","status":"Locked","duration":"14 min","url":"https://www.coursera.org/learn/cs-519/lecture/MN5JF/dual-marching-squares"},{"type":"Video","name":"Dual Marching Cubes","status":"Locked","duration":"22 min","url":"https://www.coursera.org/learn/cs-519/lecture/eURaf/dual-marching-cubes"},{"type":"Reading","name":"Deeper Reading on Contouring","status":"Locked","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/fgIS8/deeper-reading-on-contouring"},{"type":"Graded App Item","name":"Quiz 5: Contouring","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/IGSKj/quiz-5-contouring"}],"6":[{"type":"Reading","name":"The Mathematics of RBF Interpolation","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/Xelrg/the-mathematics-of-rbf-interpolation"},{"type":"Graded App Item","name":"Programming Assignment: RBF Interpolation","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/m4AQv/programming-assignment-rbf-interpolation"},{"type":"Video","name":"Introduction","status":"Locked","duration":"6 min","url":"https://www.coursera.org/learn/cs-519/lecture/4Zd6d/introduction"},{"type":"Video","name":"Ray Casting","status":"Locked","duration":"11 min","url":"https://www.coursera.org/learn/cs-519/lecture/UKGXf/ray-casting"},{"type":"Video","name":"Volumetric Shading","status":"Locked","duration":"13 min","url":"https://www.coursera.org/learn/cs-519/lecture/vVWPJ/volumetric-shading"},{"type":"Video","name":"Compositing","status":"Locked","duration":"15 min","url":"https://www.coursera.org/learn/cs-519/lecture/OPm71/compositing"},{"type":"Graded App Item","name":"Midterm Exam","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/cMQWC/midterm-exam"},{"type":"Video","name":"Introduction","status":"Locked","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/lecture/Sy5Cv/introduction"}],"7":[{"type":"Graded App Item","name":"Quiz 6: Volume Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/o5QR3/quiz-6-volume-visualization"},{"type":"Reading","name":"Reading on Segmentation and Classification","status":"Locked","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/supplement/efj7m/reading-on-segmentation-and-classification"},{"type":"Video","name":"Thresholding","status":"Locked","duration":"19 min","url":"https://www.coursera.org/learn/cs-519/lecture/kXONY/thresholding"},{"type":"Video","name":"Graph Cuts","status":"Locked","duration":"17 min","url":"https://www.coursera.org/learn/cs-519/lecture/6gOkC/graph-cuts"},{"type":"Video","name":"Interactive Graph Cuts","status":"Locked","duration":"17 min","url":"https://www.coursera.org/learn/cs-519/lecture/5FH3X/interactive-graph-cuts"},{"type":"Video","name":"Transfer Functions","status":"Not submitted","duration":"24 min","url":"https://www.coursera.org/learn/cs-519/lecture/fq5Bh/transfer-functions"},{"type":"Graded App Item","name":"Quiz 7: Segmentation and Classification","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/qXBGI/quiz-7-segmentation-and-classification"},{"type":"Graded App Item","name":"Programming Assignment: Volume Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/j7QUd/programming-assignment-volume-visualization"}],"8":[{"type":"Video","name":"Glyphs","status":"Not submitted","duration":"22 min","url":"https://www.coursera.org/learn/cs-519/lecture/bOkqd/glyphs"},{"type":"Video","name":"Derived Quantities","status":"Not submitted","duration":"17 min","url":"https://www.coursera.org/learn/cs-519/lecture/Bfkqq/derived-quantities"},{"type":"Graded App Item","name":"Quiz 8: Vector Field Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/lnG7C/quiz-8-vector-field-visualization"}],"9":[{"type":"Ungraded App Item","name":"Conflict Exam","status":"Not submitted","duration":"1h","url":"https://www.coursera.org/learn/cs-519/ungradedLti/Li47X/conflict-exam"},{"type":"Video","name":"Euler's Method","status":"Not submitted","duration":"17 min","url":"https://www.coursera.org/learn/cs-519/lecture/0nLEA/eulers-method"},{"type":"Video","name":"Numerical Differentiation","status":"Not submitted","duration":"8 min","url":"https://www.coursera.org/learn/cs-519/lecture/mUWY3/numerical-differentiation"},{"type":"Video","name":"RK Methods","status":"Not submitted","duration":"13 min","url":"https://www.coursera.org/learn/cs-519/lecture/2hVOO/rk-methods"},{"type":"Video","name":"Displacement Plots","status":"Not submitted","duration":"10 min","url":"https://www.coursera.org/learn/cs-519/lecture/kTwsk/displacement-plots"},{"type":"Video","name":"Line Integral Convolution","status":"Not submitted","duration":"12 min","url":"https://www.coursera.org/learn/cs-519/lecture/7sQVy/line-integral-convolution"},{"type":"Video","name":"Stream Objects","status":"Not submitted","duration":"25 min","url":"https://www.coursera.org/learn/cs-519/lecture/Mo7zI/stream-objects"},{"type":"Graded App Item","name":"Quiz 9: Advanced Flow Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/tVJKy/quiz-9-advanced-flow-visualization"},{"type":"Graded App Item","name":"Programming Assignment: LIC Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/YVhSc/programming-assignment-lic-visualization"},{"type":"Ungraded App Item","name":"Conflict Exam 2","status":"Not submitted","duration":"1h","url":"https://www.coursera.org/learn/cs-519/ungradedLti/eOg9y/conflict-exam-2"}],"10":[{"type":"Video","name":"Sampling","status":"Not submitted","duration":"23 min","url":"https://www.coursera.org/learn/cs-519/lecture/WmrX0/sampling"},{"type":"Video","name":"What are Tensors?","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-519/lecture/plm8P/what-are-tensors"},{"type":"Video","name":"Curvature Tensor","status":"Not submitted","duration":"7 min","url":"https://www.coursera.org/learn/cs-519/lecture/6hHk9/curvature-tensor"},{"type":"Video","name":"The Diffusion Tensor","status":"Not submitted","duration":"21 min","url":"https://www.coursera.org/learn/cs-519/lecture/ocQSo/the-diffusion-tensor"},{"type":"Graded App Item","name":"Quiz 10: Tensor Field Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/Ke7JF/quiz-10-tensor-field-visualization"}],"11":[{"type":"Video","name":"Fiber Tracking","status":"Not submitted","duration":"18 min","url":"https://www.coursera.org/learn/cs-519/lecture/KBo1Y/fiber-tracking"},{"type":"Video","name":"Tree Visualization","status":"Not submitted","duration":"22 min","url":"https://www.coursera.org/learn/cs-519/lecture/gCFPQ/tree-visualization"},{"type":"Video","name":"Force-Directed Layout","status":"Not submitted","duration":"17 min","url":"https://www.coursera.org/learn/cs-519/lecture/IIpvm/force-directed-layout"},{"type":"Graded App Item","name":"Quiz 11: Bioinformatics Visualization","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/QofDV/quiz-11-bioinformatics-visualization"},{"type":"Graded App Item","name":"Programming Assignment: Force-Directed Graph Layout","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/l436y/programming-assignment-force-directed-graph-layout"}],"12":[{"type":"Video","name":"Edge Filtering","status":"Not submitted","duration":"24 min","url":"https://www.coursera.org/learn/cs-519/lecture/dkaWk/edge-filtering"},{"type":"Video","name":"Edge Bundling","status":"Not submitted","duration":"21 min","url":"https://www.coursera.org/learn/cs-519/lecture/cDzSz/edge-bundling"},{"type":"Video","name":"Mesh Simplification","status":"Not submitted","duration":"33 min","url":"https://www.coursera.org/learn/cs-519/lecture/NyTBx/mesh-simplification"},{"type":"Graded App Item","name":"Quiz 12: Visualization at Scale","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/dZpC5/quiz-12-visualization-at-scale"},{"type":"Graded App Item","name":"Final Exam","status":"Locked","duration":"1h","url":"https://www.coursera.org/learn/cs-519/gradedLti/EkkMV/final-exam"}]}};
+
+const WEEK_LABELS_416 = {
+  0: "Week 0: Orientation",
+  1: "Week 1: The Data",
+  2: "Week 2: The Human",
+  3: "Week 3: The Chart",
+  4: "Week 4: The System",
+  5: "Week 5: Dashboard Project",
+  6: "Week 6: Midterm",
+  7: "Week 7: D3 & JavaScript",
+  8: "Week 8: Interactive Viz",
+  9: "Week 9: Narrative Viz",
+  10: "Week 10: Declarative Viz",
+  11: "Week 11: Narrative Project",
+  12: "Week 12: Final Exam"
+};
+const WEEK_LABELS_519 = {
+  0: "Week 0: Orientation",
+  1: "Week 1: Intro & Color",
+  2: "Week 2: Scalar Fields",
+  3: "Week 3: Data Science",
+  4: "Week 4: Terrain & Meshes",
+  5: "Week 5: Contouring",
+  6: "Week 6: Volume Viz & Midterm",
+  7: "Week 7: Segmentation",
+  8: "Week 8: Vector Fields",
+  9: "Week 9: Flow Viz",
+  10: "Week 10: Tensors",
+  11: "Week 11: Bioinformatics",
+  12: "Week 12: Viz at Scale & Final"
+};
+const CRUNCH_WEEKS = [5, 6, 11, 12];
+const STORAGE_KEY = 'burndown-tracker-v1';
+
+// Build flat item list with unique IDs
+let allItems = [];
+function buildItems() {
+  allItems = [];
+  ['cs416','cs519'].forEach(course => {
+    Object.keys(COURSE_DATA[course]).forEach(week => {
+      COURSE_DATA[course][week].forEach((item, idx) => {
+        allItems.push({ ...item, course, week: parseInt(week), idx, id: `${course}-${week}-${idx}` });
+      });
+    });
+  });
+}
+buildItems();
+
+// State
+let state = loadState();
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) return JSON.parse(saved);
+  // First load: pre-check completed items
+  const checked = {};
+  allItems.forEach(item => {
+    if (item.status === 'Completed') checked[item.id] = true;
+  });
+  return { checked, currentWeek: 1 };
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ checks: state, currentWeek }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function getStats() {
-  let done416 = 0, done519 = 0;
-  weekData.forEach((w, wi) => {
-    w.items.forEach((item, ii) => {
-      if (state[wi][ii]) {
-        if (item.cls === '416') done416++;
-        else done519++;
+function getIcon(type) {
+  if (type === 'Video') return '<span class="item-icon video">&#9654;</span>';
+  if (type === 'Reading') return '<span class="item-icon reading">&#128214;</span>';
+  if (type === 'Programming Assignment') return '<span class="item-icon programming">&lt;/&gt;</span>';
+  if (type.startsWith('Graded')) return '<span class="item-icon graded">&#9733;</span>';
+  return '<span class="item-icon plugin">&#9881;</span>';
+}
+
+function isGraded(type) {
+  return type.startsWith('Graded') || type === 'Programming Assignment';
+}
+
+function isVideo(type) {
+  return type === 'Video';
+}
+
+let currentFilter = 'all';
+
+function renderContent() {
+  const container = document.getElementById('course-content');
+  let html = '';
+  ['cs416','cs519'].forEach(course => {
+    const labels = course === 'cs416' ? WEEK_LABELS_416 : WEEK_LABELS_519;
+    const cls = course === 'cs519' ? 'cs519' : '';
+    const title = course === 'cs416' ? 'CS 416 - Data Visualization' : 'CS 519 - Scientific Visualization';
+    html += `<div class="course-section ${cls}"><h2>${title}</h2>`;
+    const weeks = Object.keys(COURSE_DATA[course]).map(Number).sort((a,b)=>a-b);
+    weeks.forEach(week => {
+      const items = COURSE_DATA[course][week];
+      if (currentFilter === 'thisweek' && week !== state.currentWeek) return;
+      if (items.length === 0 && week === 5 && course === 'cs416') {
+        if (currentFilter !== 'thisweek') html += `<div class="week-accordion"><div class="week-header"><span class="chevron">&#9654;</span><span class="week-title">${labels[week]}</span><span class="week-progress" style="font-style:italic">No items (dashboard continues)</span></div></div>`;
+        return;
       }
+      if (items.length === 0) return;
+      const filtered = items.filter((item, idx) => {
+        if (currentFilter === 'video') return isVideo(item.type);
+        if (currentFilter === 'graded') return isGraded(item.type);
+        return true;
+      });
+      const weekItems = items.map((item, idx) => ({ ...item, id: `${course}-${week}-${idx}` }));
+      const done = weekItems.filter(i => state.checked[i.id]).length;
+      const total = weekItems.length;
+      const isCrunch = CRUNCH_WEEKS.includes(week);
+      const autoOpen = currentFilter === 'thisweek';
+      html += `<div class="week-accordion"><div class="week-header${autoOpen ? ' open' : ''}" onclick="toggleWeek(this)"><span class="chevron">&#9654;</span><span class="week-title">${labels[week]}</span>${isCrunch ? '<span class="crunch-badge">CRUNCH</span>' : ''}<span class="week-progress">${done}/${total}</span></div><div class="week-body${autoOpen ? ' open' : ''}">`;
+      filtered.forEach((item, idx) => {
+        const origIdx = items.indexOf(item);
+        const id = `${course}-${week}-${origIdx}`;
+        const checked = state.checked[id] ? 'checked' : '';
+        const completedCls = state.checked[id] ? 'completed' : '';
+        html += `<div class="item-row ${completedCls}">${getIcon(item.type)}<div class="item-name"><a href="${item.url}" target="_blank" rel="noopener">${item.name}</a></div>${item.duration ? `<span class="item-duration">${item.duration}</span>` : ''}<input type="checkbox" class="item-check" data-id="${id}" ${checked} onchange="toggleItem(this)"></div>`;
+      });
+      html += '</div></div>';
     });
+    html += '</div>';
   });
-  return { done416, done519, total: done416 + done519 };
+  container.innerHTML = html;
 }
 
+function toggleWeek(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+
+function toggleItem(el) {
+  const id = el.dataset.id;
+  state.checked[id] = el.checked;
+  saveState();
+  updateStats();
+  updateChart();
+  // Update row style
+  el.closest('.item-row').classList.toggle('completed', el.checked);
+  // Update week progress
+  const weekBody = el.closest('.week-body');
+  const weekHeader = weekBody.previousElementSibling;
+  const checks = weekBody.querySelectorAll('.item-check');
+  const allInWeek = el.closest('.week-accordion').querySelectorAll('.item-check');
+  // Recount from all items in this week (not just filtered)
+  const courseSection = el.closest('.course-section');
+  const course = courseSection.classList.contains('cs519') ? 'cs519' : 'cs416';
+  const accordions = courseSection.querySelectorAll('.week-accordion');
+  // Just re-render stats
+  const prog = weekHeader.querySelector('.week-progress');
+  if (prog) {
+    const total = allInWeek.length;
+    const done = Array.from(allInWeek).filter(c => c.checked).length;
+    // This only counts filtered items, recalc properly
+  }
+}
+
+function updateStats() {
+  const cs416Items = allItems.filter(i => i.course === 'cs416');
+  const cs519Items = allItems.filter(i => i.course === 'cs519');
+  const totalAll = allItems.length;
+  const doneAll = allItems.filter(i => state.checked[i.id]).length;
+  const done416 = cs416Items.filter(i => state.checked[i.id]).length;
+  const done519 = cs519Items.filter(i => state.checked[i.id]).length;
+  document.getElementById('stat-overall').textContent = `${doneAll}/${totalAll}`;
+  document.getElementById('stat-416').textContent = `${Math.round(done416/cs416Items.length*100)}%`;
+  document.getElementById('stat-519').textContent = `${Math.round(done519/cs519Items.length*100)}%`;
+  document.getElementById('stat-week').textContent = state.currentWeek;
+}
+
+// Week slider
+const slider = document.getElementById('week-slider');
+slider.value = state.currentWeek;
+document.getElementById('week-label').textContent = state.currentWeek;
+slider.addEventListener('input', () => {
+  state.currentWeek = parseInt(slider.value);
+  document.getElementById('week-label').textContent = state.currentWeek;
+  saveState();
+  if (currentFilter === 'thisweek') renderContent();
+  updateStats();
+  updateChart();
+});
+
+// Filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderContent();
+  });
+});
+
+
+// Chart
 let chart;
+function buildChartData() {
+  const totalItems = allItems.length;
+  // Items per week (0-12)
+  const itemsByWeek = {};
+  for (let w = 0; w <= 12; w++) itemsByWeek[w] = allItems.filter(i => i.week === w);
 
-function renderChart() {
-  const labels = ['Start','Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8','Wk 9','Wk 10','Wk 11','Wk 12'];
-
-  const ideal = [];
-  for (let i = 0; i <= 12; i++) ideal.push(Math.round(TOTAL - (TOTAL / 12) * i));
-
-  const actual = [TOTAL];
-  let remaining = TOTAL;
-  for (let wi = 0; wi < 12; wi++) {
-    remaining -= state[wi].filter(Boolean).length;
-    actual.push(remaining);
+  // Cumulative items due by end of each week (ideal pace)
+  const cumTotal = [];
+  let cum = 0;
+  for (let w = 0; w <= 12; w++) {
+    cum += itemsByWeek[w].length;
+    cumTotal.push(cum);
   }
 
-  const planned = [TOTAL];
-  let r2 = TOTAL;
-  for (let wi = 0; wi < 12; wi++) {
-    r2 -= weekData[wi].items.length;
-    planned.push(r2);
+  // Ideal: linear from 0 to total over weeks 0-12
+  const ideal = [];
+  for (let w = 0; w <= 12; w++) {
+    ideal.push(Math.round(totalItems * w / 12));
+  }
+
+  // Remaining (burndown): total - completed by that week
+  // "Actual" = items remaining = total - checked items up to that week
+  const actual = [];
+  for (let w = 0; w <= 12; w++) {
+    const doneByWeek = allItems.filter(i => i.week <= w && state.checked[i.id]).length;
+    actual.push(totalItems - doneByWeek);
+  }
+
+  // Ideal burndown
+  const idealBurn = [];
+  for (let w = 0; w <= 12; w++) {
+    idealBurn.push(totalItems - Math.round(totalItems * w / 12));
+  }
+
+  // Planned pace: items remaining based on cumulative schedule
+  const planned = [];
+  for (let w = 0; w <= 12; w++) {
+    planned.push(totalItems - cumTotal[w]);
+  }
+
+  return { ideal: idealBurn, actual, planned };
+}
+
+function updateChart() {
+  const data = buildChartData();
+  const labels = Array.from({length:13}, (_,i) => i === 0 ? 'W0' : `W${i}`);
+
+  if (chart) {
+    chart.data.datasets[0].data = data.ideal;
+    chart.data.datasets[1].data = data.actual.slice(0, state.currentWeek + 1);
+    chart.data.datasets[2].data = data.planned;
+    chart.update();
+    return;
   }
 
   const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const tickColor = isDark ? '#a0a09c' : '#6b6b68';
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94a3b8' : '#6b7280';
 
-  if (chart) chart.destroy();
-  chart = new Chart(document.getElementById('burnChart'), {
+  chart = new Chart(document.getElementById('burndown-chart'), {
     type: 'line',
     data: {
       labels,
       datasets: [
         {
-          label: 'Ideal',
-          data: ideal,
-          borderColor: '#888780',
-          borderDash: [6, 4],
-          borderWidth: 1.5,
+          label: 'Ideal Pace',
+          data: data.ideal,
+          borderColor: '#9ca3af',
+          borderDash: [5, 5],
+          borderWidth: 2,
           pointRadius: 0,
-          tension: 0,
-          fill: false
+          fill: false,
+          tension: 0
         },
         {
-          label: 'Actual',
-          data: actual,
-          borderColor: isDark ? '#AFA9EC' : '#534AB7',
-          borderWidth: 2.5,
-          pointRadius: actual.map((_, i) => i <= currentWeek ? 4 : 0),
-          pointBackgroundColor: isDark ? '#AFA9EC' : '#534AB7',
-          tension: 0.15,
-          fill: false
+          label: 'Actual Progress',
+          data: data.actual.slice(0, state.currentWeek + 1),
+          borderColor: '#534AB7',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointBackgroundColor: '#534AB7',
+          fill: false,
+          tension: 0.1
         },
         {
-          label: 'Planned',
-          data: planned,
-          borderColor: isDark ? '#5DCAA5' : '#1D9E75',
+          label: 'Planned Pace',
+          data: data.planned,
+          borderColor: '#1D9E75',
           borderDash: [3, 3],
-          borderWidth: 1.5,
+          borderWidth: 2,
           pointRadius: 0,
-          tension: 0.15,
-          fill: false
+          fill: false,
+          tension: 0
         }
       ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 46,
-          grid: { color: gridColor },
-          ticks: { color: tickColor, font: { size: 11 } }
-        },
-        x: {
-          ticks: { autoSkip: false, maxRotation: 0, color: tickColor, font: { size: 11 } },
-          grid: { display: false }
-        }
+      plugins: {
+        legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, padding: 16 } }
       },
-      interaction: { intersect: false, mode: 'index' }
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: textColor } },
+        y: { grid: { color: gridColor }, ticks: { color: textColor }, beginAtZero: true, title: { display: true, text: 'Items Remaining', color: textColor } }
+      }
     }
   });
 }
 
-function renderList() {
-  const container = document.getElementById('week-list');
-  container.innerHTML = '';
+// Init
+renderContent();
+updateStats();
+updateChart();
 
-  weekData.forEach((w, wi) => {
-    const done = state[wi].filter(Boolean).length;
-    const total = w.items.length;
-    const pct = Math.round((done / total) * 100);
-    const allDone = done === total;
-
-    const section = document.createElement('div');
-    section.className = 'week-section';
-
-    const fillColor = allDone ? 'var(--teal)' : 'var(--purple)';
-
-    section.innerHTML =
-      '<div class="week-header" data-week="' + wi + '">' +
-        '<div class="week-header-left">' +
-          '<span class="week-title">Week ' + w.n + '</span>' +
-          (w.crunch ? '<span class="badge badge-crunch">crunch</span>' : '') +
-          '<span class="week-count">' + done + '/' + total + '</span>' +
-        '</div>' +
-        '<div class="week-header-right">' +
-          '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%;background:' + fillColor + ';"></div></div>' +
-          '<span class="chevron">&#9662;</span>' +
-        '</div>' +
-      '</div>' +
-      '<div class="week-body" id="wb-' + wi + '">' +
-        w.items.map(function(item, ii) {
-          return '<div class="item-row ' + (state[wi][ii] ? 'done' : '') + '">' +
-            '<input type="checkbox" ' + (state[wi][ii] ? 'checked' : '') + ' data-w="' + wi + '" data-i="' + ii + '" />' +
-            '<span class="badge badge-' + item.cls + '">' + item.cls + '</span>' +
-            '<span class="item-name">' + item.name + '</span>' +
-            (item.hours ? '<span class="item-hours">' + item.hours + '</span>' : '') +
-          '</div>';
-        }).join('') +
-      '</div>';
-
-    container.appendChild(section);
-  });
-
-  document.querySelectorAll('.week-header').forEach(function(h) {
-    h.addEventListener('click', function() {
-      var body = document.getElementById('wb-' + h.dataset.week);
-      var chevron = h.querySelector('.chevron');
-      body.classList.toggle('open');
-      chevron.classList.toggle('open');
-    });
-  });
-
-  document.querySelectorAll('.item-row input[type="checkbox"]').forEach(function(cb) {
-    cb.addEventListener('change', function(e) {
-      var w = parseInt(e.target.dataset.w);
-      var i = parseInt(e.target.dataset.i);
-      state[w][i] = e.target.checked;
-      saveState();
-      updateAll();
-    });
-  });
-}
-
-function updateStats() {
-  var s = getStats();
-  document.getElementById('stat-done').textContent = s.total + ' / ' + TOTAL;
-  document.getElementById('stat-416').textContent = s.done416 + ' / ' + TOTAL_416;
-  document.getElementById('stat-519').textContent = s.done519 + ' / ' + TOTAL_519;
-  document.getElementById('stat-week').textContent = currentWeek;
-}
-
-function updateAll() {
-  renderList();
-  renderChart();
-  updateStats();
-}
-
-loadState();
-
-var slider = document.getElementById('week-slider');
-var weekOut = document.getElementById('week-out');
-slider.value = currentWeek;
-weekOut.textContent = currentWeek;
-
-slider.addEventListener('input', function(e) {
-  currentWeek = parseInt(e.target.value);
-  weekOut.textContent = currentWeek;
-  document.getElementById('stat-week').textContent = currentWeek;
-  saveState();
-  renderChart();
-});
-
-document.getElementById('reset-btn').addEventListener('click', function() {
-  if (confirm('Reset all progress? This cannot be undone.')) {
-    resetState();
-    slider.value = 1;
-    weekOut.textContent = '1';
-    saveState();
-    updateAll();
-  }
-});
-
-updateAll();
-
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-  renderChart();
+// Listen for color scheme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (chart) { chart.destroy(); chart = null; }
+  updateChart();
 });
 </script>
-
 </body>
 </html>
