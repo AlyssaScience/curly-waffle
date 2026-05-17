@@ -227,20 +227,11 @@ h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
 }
 .note-btn:hover { opacity: 1; }
 .note-btn.has-note { opacity: 1; color: var(--purple); }
-.note-btn.has-note::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: -1px;
-  width: 6px;
-  height: 6px;
-  background: var(--purple);
-  border-radius: 50%;
-}
 .note-tooltip {
   position: absolute;
   bottom: calc(100% + 6px);
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -829,7 +820,22 @@ function saveNotes() {
   }
   saveState();
   destroyNotes();
+  // Preserve scroll and open accordions
+  const scrollY = window.scrollY;
+  const openWeeks = [];
+  document.querySelectorAll('.week-header.open').forEach(h => {
+    openWeeks.push(h.querySelector('.week-title').textContent);
+  });
   renderContent();
+  // Restore open accordions
+  document.querySelectorAll('.week-header').forEach(h => {
+    const title = h.querySelector('.week-title').textContent;
+    if (openWeeks.includes(title)) {
+      h.classList.add('open');
+      h.nextElementSibling.classList.add('open');
+    }
+  });
+  window.scrollTo(0, scrollY);
 }
 
 function destroyNotes() {
