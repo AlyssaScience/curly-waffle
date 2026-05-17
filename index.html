@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Summer 2026 Coursework Burn-down</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafaf8;
+      --card: #ffffff;
+      --surface: #f3f2ee;
+      --border: rgba(0,0,0,0.1);
+      --text: #1a1a1a;
+      --text-secondary: #6b6b68;
+      --text-tertiary: #9b9b97;
+      --purple: #534AB7;
+      --purple-light: #EEEDFE;
+      --purple-text: #3C3489;
+      --teal: #1D9E75;
+      --teal-light: #E1F5EE;
+      --teal-text: #085041;
+      --coral: #D85A30;
+      --coral-light: #FAECE7;
+      --coral-text: #993C1D;
+      --green: #1D9E75;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1a1a;
+        --card: #242424;
+        --surface: #2a2a2a;
+        --border: rgba(255,255,255,0.1);
+        --text: #e8e8e4;
+        --text-secondary: #a0a09c;
+        --text-tertiary: #6b6b68;
+        --purple-light: #2a2654;
+        --purple-text: #CECBF6;
+        --teal-light: #0a3028;
+        --teal-text: #9FE1CB;
+        --coral-light: #3a2018;
+        --coral-text: #F5C4B3;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .controls input[type="range"] {
+      flex: 1;
+      accent-color: var(--purple);
+    }
+
+    .controls .week-val {
+      font-weight: 500;
+      color: var(--text);
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 3px;
+      border-radius: 1px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 260px;
+      margin-bottom: 2rem;
+    }
+
+    .reset-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 14px;
+      cursor: pointer;
+      margin-bottom: 1.5rem;
+      transition: background 0.15s;
+    }
+
+    .reset-btn:hover { background: var(--border); }
+
+    .week-section {
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 8px;
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    .week-header {
+      padding: 10px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+      transition: background 0.1s;
+    }
+
+    .week-header:hover { background: var(--surface); }
+
+    .week-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .week-title {
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .week-count {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .week-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 130px;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 4px;
+      background: var(--surface);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    .chevron {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      transition: transform 0.2s;
+      line-height: 1;
+    }
+
+    .chevron.open { transform: rotate(180deg); }
+
+    .week-body {
+      display: none;
+      padding: 0 16px 12px;
+    }
+
+    .week-body.open { display: block; }
+
+    .badge {
+      font-size: 11px;
+      padding: 1px 7px;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .badge-416 { background: var(--purple-light); color: var(--purple-text); }
+    .badge-519 { background: var(--teal-light); color: var(--teal-text); }
+    .badge-crunch { background: var(--coral-light); color: var(--coral-text); }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+      transition: opacity 0.2s;
+    }
+
+    .item-row.done {
+      text-decoration: line-through;
+      opacity: 0.45;
+    }
+
+    .item-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--purple);
+      flex-shrink: 0;
+    }
+
+    .item-name { flex: 1; }
+
+    .item-hours {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+    }
+
+    .footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 0.5px solid var(--border);
+      font-size: 12px;
+      color: var(--text-tertiary);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Summer 2026 burn-down</h1>
+  <p class="subtitle">CS 416: Data Visualization + CS 519: Scientific Visualization</p>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value" id="stat-done">0 / 43</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">CS 416</div>
+      <div class="stat-value" id="stat-416">0 / 24</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">CS 519</div>
+      <div class="stat-value" id="stat-519">0 / 19</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Current week</div>
+      <div class="stat-value" id="stat-week">1</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <span>I'm on week</span>
+    <input type="range" min="1" max="12" value="1" step="1" id="week-slider" />
+    <span class="week-val" id="week-out">1</span>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="legend-swatch" style="background:#888;"></span> Ideal pace</span>
+    <span class="legend-item"><span class="legend-swatch" style="background:var(--purple); height:3px;"></span> Your progress</span>
+    <span class="legend-item"><span class="legend-swatch" style="background:var(--teal); height:2px;"></span> Planned pace</span>
+  </div>
+
+  <div class="chart-wrap">
+    <canvas id="burnChart"></canvas>
+  </div>
+
+  <button class="reset-btn" id="reset-btn">Reset all progress</button>
+
+  <div id="week-list"></div>
+
+  <div class="footer">
+    Progress saves automatically in your browser.
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'summer2026-burndown';
+
+const weekData = [
+  { n:1, crunch:false, items:[
+    {cls:'416', name:'Elephant Chart', hours:'3h'},
+    {cls:'416', name:'Week 1 Quiz', hours:''},
+    {cls:'519', name:'Quiz 1: Sci Viz & Color Spaces', hours:'1h'}
+  ]},
+  { n:2, crunch:false, items:[
+    {cls:'416', name:"Fitts' Law Data", hours:'1h'},
+    {cls:'416', name:'Scale the Graph', hours:'1h'},
+    {cls:'416', name:'Week 2 Quiz', hours:'30m'},
+    {cls:'519', name:'Quiz 2: Scalar Field Viz', hours:'1h'}
+  ]},
+  { n:3, crunch:false, items:[
+    {cls:'416', name:'Graph Layout', hours:'3h'},
+    {cls:'416', name:'Week 3 Quiz', hours:'30m'},
+    {cls:'519', name:'Quiz 3: Data Science', hours:'1h'}
+  ]},
+  { n:4, crunch:false, items:[
+    {cls:'416', name:'Week 4 Quiz', hours:'10m'},
+    {cls:'416', name:'Dashboard (start)', hours:'3h'},
+    {cls:'519', name:'Quiz 4: Terrain Viz', hours:'1h'}
+  ]},
+  { n:5, crunch:true, items:[
+    {cls:'416', name:'Dashboard (finish)', hours:'12h'},
+    {cls:'519', name:'Quiz 5: Contouring', hours:'1h'},
+    {cls:'519', name:'Marching Squares', hours:'3h'}
+  ]},
+  { n:6, crunch:true, items:[
+    {cls:'416', name:'Midterm Exam', hours:'1h'},
+    {cls:'519', name:'Quiz 6: Volume Viz', hours:'1h'},
+    {cls:'519', name:'RBF Interpolation', hours:'1h'},
+    {cls:'519', name:'Midterm Exam', hours:'1h'}
+  ]},
+  { n:7, crunch:false, items:[
+    {cls:'416', name:'D3: Selecting Elements', hours:'15m'},
+    {cls:'416', name:'D3: Updating with Data', hours:'15m'},
+    {cls:'416', name:'D3: Selecting a Needle', hours:'15m'},
+    {cls:'416', name:'D3: SelectAll-Data-Enter-Append', hours:''},
+    {cls:'416', name:'Week 7 Quiz', hours:'1h'},
+    {cls:'519', name:'Quiz 7: Segmentation', hours:'1h'},
+    {cls:'519', name:'Volume Visualization', hours:'1h'}
+  ]},
+  { n:8, crunch:false, items:[
+    {cls:'416', name:'D3: Scales', hours:''},
+    {cls:'416', name:'D3: Axes', hours:'30m'},
+    {cls:'416', name:'D3: Pie Chart', hours:'15m'},
+    {cls:'416', name:'Fuel Efficiency Scatterplot', hours:''},
+    {cls:'416', name:'Week 8 Quiz', hours:''},
+    {cls:'519', name:'Quiz 8: Vector Fields', hours:'1h'}
+  ]},
+  { n:9, crunch:false, items:[
+    {cls:'416', name:'Week 9 Quiz', hours:'15m'},
+    {cls:'519', name:'Quiz 9: Advanced Flow', hours:'1h'},
+    {cls:'519', name:'LIC Visualization', hours:'1h'}
+  ]},
+  { n:10, crunch:false, items:[
+    {cls:'416', name:'Week 10 Quiz', hours:''},
+    {cls:'416', name:'Narrative Viz (start)', hours:'3h'},
+    {cls:'519', name:'Quiz 10: Tensor Fields', hours:'1h'}
+  ]},
+  { n:11, crunch:true, items:[
+    {cls:'416', name:'Narrative Viz (finish)', hours:'12h'},
+    {cls:'519', name:'Quiz 11: Bioinformatics', hours:'1h'},
+    {cls:'519', name:'Force-Directed Graph Layout', hours:'1h'}
+  ]},
+  { n:12, crunch:true, items:[
+    {cls:'416', name:'Final Exam', hours:'1h'},
+    {cls:'519', name:'Quiz 12: Viz at Scale', hours:'1h'},
+    {cls:'519', name:'Final Exam', hours:'1h'}
+  ]}
+];
+
+const TOTAL = weekData.reduce((s, w) => s + w.items.length, 0);
+const TOTAL_416 = weekData.reduce((s, w) => s + w.items.filter(i => i.cls === '416').length, 0);
+const TOTAL_519 = weekData.reduce((s, w) => s + w.items.filter(i => i.cls === '519').length, 0);
+
+let state, currentWeek;
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && saved.checks && saved.checks.length === weekData.length) {
+      state = saved.checks;
+      currentWeek = saved.currentWeek || 1;
+    } else {
+      resetState();
+    }
+  } catch {
+    resetState();
+  }
+}
+
+function resetState() {
+  state = weekData.map(w => w.items.map(() => false));
+  currentWeek = 1;
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ checks: state, currentWeek }));
+}
+
+function getStats() {
+  let done416 = 0, done519 = 0;
+  weekData.forEach((w, wi) => {
+    w.items.forEach((item, ii) => {
+      if (state[wi][ii]) {
+        if (item.cls === '416') done416++;
+        else done519++;
+      }
+    });
+  });
+  return { done416, done519, total: done416 + done519 };
+}
+
+let chart;
+
+function renderChart() {
+  const labels = ['Start','Wk 1','Wk 2','Wk 3','Wk 4','Wk 5','Wk 6','Wk 7','Wk 8','Wk 9','Wk 10','Wk 11','Wk 12'];
+
+  const ideal = [];
+  for (let i = 0; i <= 12; i++) ideal.push(Math.round(TOTAL - (TOTAL / 12) * i));
+
+  const actual = [TOTAL];
+  let remaining = TOTAL;
+  for (let wi = 0; wi < 12; wi++) {
+    remaining -= state[wi].filter(Boolean).length;
+    actual.push(remaining);
+  }
+
+  const planned = [TOTAL];
+  let r2 = TOTAL;
+  for (let wi = 0; wi < 12; wi++) {
+    r2 -= weekData[wi].items.length;
+    planned.push(r2);
+  }
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const tickColor = isDark ? '#a0a09c' : '#6b6b68';
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('burnChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Ideal',
+          data: ideal,
+          borderColor: '#888780',
+          borderDash: [6, 4],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0,
+          fill: false
+        },
+        {
+          label: 'Actual',
+          data: actual,
+          borderColor: isDark ? '#AFA9EC' : '#534AB7',
+          borderWidth: 2.5,
+          pointRadius: actual.map((_, i) => i <= currentWeek ? 4 : 0),
+          pointBackgroundColor: isDark ? '#AFA9EC' : '#534AB7',
+          tension: 0.15,
+          fill: false
+        },
+        {
+          label: 'Planned',
+          data: planned,
+          borderColor: isDark ? '#5DCAA5' : '#1D9E75',
+          borderDash: [3, 3],
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.15,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 46,
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 11 } }
+        },
+        x: {
+          ticks: { autoSkip: false, maxRotation: 0, color: tickColor, font: { size: 11 } },
+          grid: { display: false }
+        }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
+}
+
+function renderList() {
+  const container = document.getElementById('week-list');
+  container.innerHTML = '';
+
+  weekData.forEach((w, wi) => {
+    const done = state[wi].filter(Boolean).length;
+    const total = w.items.length;
+    const pct = Math.round((done / total) * 100);
+    const allDone = done === total;
+
+    const section = document.createElement('div');
+    section.className = 'week-section';
+
+    const fillColor = allDone ? 'var(--teal)' : 'var(--purple)';
+
+    section.innerHTML =
+      '<div class="week-header" data-week="' + wi + '">' +
+        '<div class="week-header-left">' +
+          '<span class="week-title">Week ' + w.n + '</span>' +
+          (w.crunch ? '<span class="badge badge-crunch">crunch</span>' : '') +
+          '<span class="week-count">' + done + '/' + total + '</span>' +
+        '</div>' +
+        '<div class="week-header-right">' +
+          '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%;background:' + fillColor + ';"></div></div>' +
+          '<span class="chevron">&#9662;</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="week-body" id="wb-' + wi + '">' +
+        w.items.map(function(item, ii) {
+          return '<div class="item-row ' + (state[wi][ii] ? 'done' : '') + '">' +
+            '<input type="checkbox" ' + (state[wi][ii] ? 'checked' : '') + ' data-w="' + wi + '" data-i="' + ii + '" />' +
+            '<span class="badge badge-' + item.cls + '">' + item.cls + '</span>' +
+            '<span class="item-name">' + item.name + '</span>' +
+            (item.hours ? '<span class="item-hours">' + item.hours + '</span>' : '') +
+          '</div>';
+        }).join('') +
+      '</div>';
+
+    container.appendChild(section);
+  });
+
+  document.querySelectorAll('.week-header').forEach(function(h) {
+    h.addEventListener('click', function() {
+      var body = document.getElementById('wb-' + h.dataset.week);
+      var chevron = h.querySelector('.chevron');
+      body.classList.toggle('open');
+      chevron.classList.toggle('open');
+    });
+  });
+
+  document.querySelectorAll('.item-row input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function(e) {
+      var w = parseInt(e.target.dataset.w);
+      var i = parseInt(e.target.dataset.i);
+      state[w][i] = e.target.checked;
+      saveState();
+      updateAll();
+    });
+  });
+}
+
+function updateStats() {
+  var s = getStats();
+  document.getElementById('stat-done').textContent = s.total + ' / ' + TOTAL;
+  document.getElementById('stat-416').textContent = s.done416 + ' / ' + TOTAL_416;
+  document.getElementById('stat-519').textContent = s.done519 + ' / ' + TOTAL_519;
+  document.getElementById('stat-week').textContent = currentWeek;
+}
+
+function updateAll() {
+  renderList();
+  renderChart();
+  updateStats();
+}
+
+loadState();
+
+var slider = document.getElementById('week-slider');
+var weekOut = document.getElementById('week-out');
+slider.value = currentWeek;
+weekOut.textContent = currentWeek;
+
+slider.addEventListener('input', function(e) {
+  currentWeek = parseInt(e.target.value);
+  weekOut.textContent = currentWeek;
+  document.getElementById('stat-week').textContent = currentWeek;
+  saveState();
+  renderChart();
+});
+
+document.getElementById('reset-btn').addEventListener('click', function() {
+  if (confirm('Reset all progress? This cannot be undone.')) {
+    resetState();
+    slider.value = 1;
+    weekOut.textContent = '1';
+    saveState();
+    updateAll();
+  }
+});
+
+updateAll();
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+  renderChart();
+});
+</script>
+
+</body>
+</html>
