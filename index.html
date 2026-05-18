@@ -212,6 +212,33 @@ h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
 }
 .item-check { width: 1.1rem; height: 1.1rem; accent-color: var(--purple); cursor: pointer; flex-shrink: 0; }
 .cs519 .item-check { accent-color: var(--teal); }
+.hide-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  padding: 0.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  display: none;
+}
+.edit-mode .hide-btn { display: inline; }
+.hide-btn:hover { opacity: 1; color: var(--coral); }
+.item-row.hidden-item { opacity: 0.35; background: var(--bg); }
+.show-hidden-toggle {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  user-select: none;
+}
+.show-hidden-toggle input { accent-color: var(--purple); }
 .note-btn {
   background: none;
   border: none;
@@ -364,6 +391,7 @@ h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
   <button class="filter-btn" data-filter="video">Videos</button>
   <button class="filter-btn" data-filter="graded">Graded</button>
 </div>
+<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap"><button class="filter-btn" id="edit-mode-btn" onclick="toggleEditMode()">Edit list</button><label class="show-hidden-toggle" id="show-hidden-label" style="margin-bottom:0;display:none"><input type="checkbox" id="show-hidden-check"> Show hidden items</label></div>
 <div id="course-content"></div>
 
 <script>
@@ -424,6 +452,7 @@ function loadState() {
   if (saved) {
     const s = JSON.parse(saved);
     if (!s.notes) s.notes = {};
+    if (!s.hidden) s.hidden = {};
     return s;
   }
   // First load: pre-check completed items
@@ -431,7 +460,7 @@ function loadState() {
   allItems.forEach(item => {
     if (item.status === 'Completed') checked[item.id] = true;
   });
-  return { checked, notes: {}, currentWeek: 1 };
+  return { checked, notes: {}, hidden: {}, currentWeek: 1 };
 }
 
 function saveState() {
@@ -456,6 +485,7 @@ function isVideo(type) {
 
 let currentFilter = 'all';
 let currentView = 'byweek';
+let showHidden = false;
 
 function shouldShowWeek(week) {
   if (currentFilter === 'thisweek') return week === state.currentWeek;
@@ -475,13 +505,18 @@ function filterItems(items) {
 
 function renderItemRow(item, course, week, origIdx) {
   const id = `${course}-${week}-${origIdx}`;
+  const isHidden = state.hidden[id];
+  if (isHidden && !showHidden) return '';
   const checked = state.checked[id] ? 'checked' : '';
   const completedCls = state.checked[id] ? 'completed' : '';
+  const hiddenCls = isHidden ? ' hidden-item' : '';
   const courseTag = currentView === 'byweek' ? `<span class="course-tag tag-${course === 'cs416' ? '416' : '519'}">${course === 'cs416' ? '416' : '519'}</span>` : '';
   const hasNote = state.notes[id] ? ' has-note' : '';
   const noteText = state.notes[id] || '';
   const tooltip = noteText ? `<span class="note-tooltip">${noteText.replace(/</g,'&lt;').substring(0,60)}</span>` : '';
-  return `<div class="item-row ${completedCls}">${getIcon(item.type)}<div class="item-name"><a href="${item.url}" target="_blank" rel="noopener">${item.name}</a>${courseTag}</div>${item.duration ? `<span class="item-duration">${item.duration}</span>` : ''}<button class="note-btn${hasNote}" data-id="${id}" onclick="openNotes(this)">&#9998;${tooltip}</button><input type="checkbox" class="item-check" data-id="${id}" ${checked} onchange="toggleItem(this)"></div>`;
+  const hideLabel = isHidden ? '&#8634;' : '&times;';
+  const hideTitle = isHidden ? 'Restore' : 'Hide';
+  return `<div class="item-row ${completedCls}${hiddenCls}">${getIcon(item.type)}<div class="item-name"><a href="${item.url}" target="_blank" rel="noopener">${item.name}</a>${courseTag}</div>${item.duration ? `<span class="item-duration">${item.duration}</span>` : ''}<button class="note-btn${hasNote}" data-id="${id}" onclick="openNotes(this)">&#9998;${tooltip}</button><button class="hide-btn" data-id="${id}" onclick="hideItem(this)" title="${hideTitle}">${hideLabel}</button><input type="checkbox" class="item-check" data-id="${id}" ${checked} onchange="toggleItem(this)"></div>`;
 }
 
 function renderByWeek() {
@@ -767,6 +802,80 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () 
   updateChart();
 });
 
+// Edit mode
+let editMode = false;
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('edit-mode-btn');
+  const label = document.getElementById('show-hidden-label');
+  const container = document.getElementById('course-content');
+  btn.classList.toggle('active', editMode);
+  btn.textContent = editMode ? 'Done editing' : 'Edit list';
+  label.style.display = editMode ? 'flex' : 'none';
+  container.classList.toggle('edit-mode', editMode);
+  if (!editMode) {
+    showHidden = false;
+    document.getElementById('show-hidden-check').checked = false;
+    renderContent();
+  }
+}
+
+// Show hidden toggle
+document.getElementById('show-hidden-check').addEventListener('change', (e) => {
+  showHidden = e.target.checked;
+  renderContent();
+});
+
+// Hide/restore items
+let pendingHideId = null;
+
+function hideItem(btn) {
+  const id = btn.dataset.id;
+  if (state.hidden[id]) {
+    // Restore directly, no confirm needed
+    delete state.hidden[id];
+    saveState();
+    preserveAndRender();
+    return;
+  }
+  pendingHideId = id;
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'hide-confirm-overlay';
+  overlay.innerHTML = `<div class="confirm-modal"><p>Hide this item?</p><div class="confirm-btns"><button class="btn-yes" onclick="confirmHide()">Yes</button><button class="btn-no" onclick="cancelHide()">No</button></div></div>`;
+  document.body.appendChild(overlay);
+}
+
+function confirmHide() {
+  state.hidden[pendingHideId] = true;
+  saveState();
+  document.getElementById('hide-confirm-overlay').remove();
+  pendingHideId = null;
+  preserveAndRender();
+}
+
+function cancelHide() {
+  document.getElementById('hide-confirm-overlay').remove();
+  pendingHideId = null;
+}
+
+function preserveAndRender() {
+  const scrollY = window.scrollY;
+  const openWeeks = [];
+  document.querySelectorAll('.week-header.open').forEach(h => {
+    openWeeks.push(h.querySelector('.week-title').textContent);
+  });
+  renderContent();
+  document.querySelectorAll('.week-header').forEach(h => {
+    const title = h.querySelector('.week-title').textContent;
+    if (openWeeks.includes(title)) {
+      h.classList.add('open');
+      h.nextElementSibling.classList.add('open');
+    }
+  });
+  window.scrollTo(0, scrollY);
+}
+
 // Notes feature
 let activeNoteId = null;
 
@@ -820,22 +929,7 @@ function saveNotes() {
   }
   saveState();
   destroyNotes();
-  // Preserve scroll and open accordions
-  const scrollY = window.scrollY;
-  const openWeeks = [];
-  document.querySelectorAll('.week-header.open').forEach(h => {
-    openWeeks.push(h.querySelector('.week-title').textContent);
-  });
-  renderContent();
-  // Restore open accordions
-  document.querySelectorAll('.week-header').forEach(h => {
-    const title = h.querySelector('.week-title').textContent;
-    if (openWeeks.includes(title)) {
-      h.classList.add('open');
-      h.nextElementSibling.classList.add('open');
-    }
-  });
-  window.scrollTo(0, scrollY);
+  preserveAndRender();
 }
 
 function destroyNotes() {
